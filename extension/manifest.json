@@ -1,0 +1,25 @@
+{
+    "name": "Email Helper",
+    "description": "Helping with FragranceBuy emails",
+    "version": "1.0",
+    "manifest_version": 2,
+    "permissions": ["contextMenus", "tabs", "activeTab", "http://localhost/*"],
+    "background": {
+        "persistent": false,
+        "page": "background.html"
+    },
+    "commands":{
+        "best-regards": {
+            "suggested_key":{
+                "default": "Alt+B"
+            },
+            "description": "Best regards signature for emails"
+        },
+        "kindly-advise":{
+            "suggested_key":{
+                "default": "Alt+K"
+            },
+            "description": "Kindly advise signature for emails"
+        }
+    }
+}
