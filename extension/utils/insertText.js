@@ -1,16 +1,10 @@
-const getParams = () => {
+
+const getParameters = () => {
     if (window.getSelection){
         const sel = window.getSelection();
         if (sel.getRangeAt && sel.rangeCount){
             const range = sel.getRangeAt(0);
-            const params = [];
-            let curr = range.startContainer;
-            while(curr.nextSibling){
-                params.push(curr.nextSibling.textContent);
-                curr = curr.nextSibling;
-            }
-
-            return params;
+            return range.startContainer.textContent.split(",");
         }
     }
     
@@ -24,27 +18,30 @@ const insertParams = (params, text) => {
     const regex = /{{param\d}}/g
     const matches = text.match(regex);
 
-    if (matches.length === 0){
+    if (!matches){
         return text;
     }
 
     let updated = text;
     for (let i = 0; i < matches.length; i++){
-        updated = updated.replace(matches[i], params[i])
+        const match = matches[i];
+        const paramIdx = parseInt(match.charAt(match.length - 3)) - 1;
+        updated = updated.replace(match, params[paramIdx]);
     }
 
     return updated;
 
 }
  
-const insertTextAtCaret = (text, params) => {
+const insertTextAtCaret = (node) => {
     if (window.getSelection){
         const sel = window.getSelection();
         if (sel.getRangeAt && sel.rangeCount){
             const range = sel.getRangeAt(0);
             range.deleteContents();
-            const node = text === '\n' ? document.createElement('br') : document.createTextNode(text);
+        
             range.insertNode(node);
+    
             range.setStartAfter(node);
             sel.removeAllRanges();
             sel.addRange(range);
@@ -54,20 +51,42 @@ const insertTextAtCaret = (text, params) => {
     }
 }
 
+const generateCaretNode = (text) => {
+    if (text.includes('\n')){
+        text = text.replace("\n", "<br />")
+    }
+
+    const node = document.createElement("div");
+    node.innerHTML = text;
+
+    return node;
+}
 
 chrome.runtime.onMessage.addListener((req, sender, res) => {
     console.log(sender.tab ? "from a content script: " + sender.tab.url : "from the extension");
 
     if (req.message === "email"){
 
-        const email = req.data.split("\n")
+        const email = req.data.split("{{NEW_LINE}}")
 
-        //email = email.join("\n\n");
-        const params = getParams();
+        
+        const params = getParameters();
+        
         for (let i = 0; i < email.length; i++){
-            console.log(email);
-            // const updated = insertParams(email[i]);
-            // insertTextAtCaret(email[i], params);
+            email[i] = insertParams(params, email[i])
+            
+            
+            if (email[i].includes('\n')){
+                email[i] = email[i].replace("\n", "<br />")
+            }
+
+            const node = document.createElement("div");
+            node.innerHTML = email[i];
+            const lineBreak = document.createElement("br");
+
+            insertTextAtCaret(node);
+            insertTextAtCaret(lineBreak);
+            
         }
 
 
@@ -75,8 +94,12 @@ chrome.runtime.onMessage.addListener((req, sender, res) => {
     }
 
     if (req.message === "command"){
-        for (let i = 0; i < req.data.length; i++){
-            insertTextAtCaret(req.data[i])
+        const lines = req.data.split("\n\n");
+
+        for (let i = 0; i < lines.length; i++){
+            insertTextAtCaret(generateCaretNode(lines[i]));
+            const lineBreak = document.createElement("br");
+            insertTextAtCaret(lineBreak);
         }
 
         res({ message: "Signature inserted!!"})

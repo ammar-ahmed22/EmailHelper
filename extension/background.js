@@ -1,6 +1,6 @@
 import API from "./utils/api.js"
 
-const devAPI = new API("http://localhost:5000/api/v1")
+const devAPI = new API("http://localhost:3000/api/v1")
 
 const createContextMenus = (apiResp, location=null) => {
   if (apiResp){
@@ -10,7 +10,7 @@ const createContextMenus = (apiResp, location=null) => {
 
     data.forEach( template => {
       // ID is the email so that it can be accessed without making another api call
-      chrome.contextMenus.create({ title: template.title, contexts: ["editable"], id: template.email.join("\n\n")})
+      chrome.contextMenus.create({ title: template.title, contexts: ["editable"], id: template.email.join("{{NEW_LINE}}")})
     });
 
     console.log("Sucessfully added context menus!");
@@ -50,7 +50,7 @@ const onClickHandler = async (info, tab) => {
   chrome.runtime.onInstalled.addListener(async () => {
     
     // Create content editable context item
-    chrome.contextMenus.create({title: "Load Emails", contexts: ["editable"], id: "loademails"});
+    chrome.contextMenus.create({title: "Load Emails", contexts: ["editable", "selection"], id: "loademails"});
 
     //TODO: Make API call to get emails available on install and create contextMenus
     console.log("Loading emails...");
